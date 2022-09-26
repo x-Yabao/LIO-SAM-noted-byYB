@@ -61,8 +61,8 @@ public:
     Eigen::MatrixXd poseCovariance;
 
     ros::Publisher pubLaserCloudSurround;
-    ros::Publisher pubLaserOdometryGlobal;  // 发布里程计（优化后的，包括回环）
-    ros::Publisher pubLaserOdometryIncremental; // 发布里程计（scan2map之后的，不包括回环）
+    ros::Publisher pubLaserOdometryGlobal;          // 发布里程计（优化后的，包括回环）
+    ros::Publisher pubLaserOdometryIncremental;     // 发布里程计（scan2map之后的，不包括回环）
     ros::Publisher pubKeyPoses;
     ros::Publisher pubPath;
 
@@ -79,40 +79,40 @@ public:
 
     ros::ServiceServer srvSaveMap;
 
-    std::deque<nav_msgs::Odometry> gpsQueue;    // GPS信息
-    lio_sam::cloud_info cloudInfo;      // 点云信息
+    std::deque<nav_msgs::Odometry> gpsQueue;                        // GPS信息
+    lio_sam::cloud_info cloudInfo;                                  // 点云信息
 
-    vector<pcl::PointCloud<PointType>::Ptr> cornerCloudKeyFrames;   // 关键帧角点点云
-    vector<pcl::PointCloud<PointType>::Ptr> surfCloudKeyFrames;     // 关键帧面点点云
+    vector<pcl::PointCloud<PointType>::Ptr> cornerCloudKeyFrames;   // 关键帧角点点云容器
+    vector<pcl::PointCloud<PointType>::Ptr> surfCloudKeyFrames;     // 关键帧面点点云容器
     
-    pcl::PointCloud<PointType>::Ptr cloudKeyPoses3D;    // 存储关键帧的位置信息的点云
-    pcl::PointCloud<PointTypePose>::Ptr cloudKeyPoses6D;    // 存储关键帧的6D位姿信息的点云
-    pcl::PointCloud<PointType>::Ptr copy_cloudKeyPoses3D;   // 存储关键帧的位置信息的点云（回环检测时用）
-    pcl::PointCloud<PointTypePose>::Ptr copy_cloudKeyPoses6D;   // 存储关键帧的6D位姿信息的点云（回环检测时用）
+    pcl::PointCloud<PointType>::Ptr cloudKeyPoses3D;                // 存储关键帧的位置信息的点云
+    pcl::PointCloud<PointTypePose>::Ptr cloudKeyPoses6D;            // 存储关键帧的6D位姿信息的点云
+    pcl::PointCloud<PointType>::Ptr copy_cloudKeyPoses3D;           // 存储关键帧的位置信息的点云（回环检测时用）
+    pcl::PointCloud<PointTypePose>::Ptr copy_cloudKeyPoses6D;       // 存储关键帧的6D位姿信息的点云（回环检测时用）
 
-    pcl::PointCloud<PointType>::Ptr laserCloudCornerLast; // corner feature set from odoOptimization
-    pcl::PointCloud<PointType>::Ptr laserCloudSurfLast; // surf feature set from odoOptimization
-    pcl::PointCloud<PointType>::Ptr laserCloudCornerLastDS; // downsampled corner featuer set from odoOptimization
-    pcl::PointCloud<PointType>::Ptr laserCloudSurfLastDS; // downsampled surf featuer set from odoOptimization
+    pcl::PointCloud<PointType>::Ptr laserCloudCornerLast;           // corner feature set from odoOptimization，cloudinfo中提取的
+    pcl::PointCloud<PointType>::Ptr laserCloudSurfLast;             // surf feature set from odoOptimization，cloudinfo中提取的
+    pcl::PointCloud<PointType>::Ptr laserCloudCornerLastDS;         // downsampled corner featuer set from odoOptimization
+    pcl::PointCloud<PointType>::Ptr laserCloudSurfLastDS;           // downsampled surf featuer set from odoOptimization
 
     pcl::PointCloud<PointType>::Ptr laserCloudOri;
     pcl::PointCloud<PointType>::Ptr coeffSel;
 
-    std::vector<PointType> laserCloudOriCornerVec; // corner point holder for parallel computation
+    std::vector<PointType> laserCloudOriCornerVec;                  // corner point holder for parallel computation
     std::vector<PointType> coeffSelCornerVec;
     std::vector<bool> laserCloudOriCornerFlag;
-    std::vector<PointType> laserCloudOriSurfVec; // surf point holder for parallel computation
+    std::vector<PointType> laserCloudOriSurfVec;                    // surf point holder for parallel computation
     std::vector<PointType> coeffSelSurfVec;
     std::vector<bool> laserCloudOriSurfFlag;
 
     map<int, pair<pcl::PointCloud<PointType>, pcl::PointCloud<PointType>>> laserCloudMapContainer;  // 局部地图的一个容器
-    pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMap;    // 角点局部地图
-    pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMap;      // 面点局部地图
-    pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMapDS;  // 角点局部地图的下采样后的点云
-    pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMapDS;    // 面点局部地图的下采样后的点云
+    pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMap;        // 角点局部地图
+    pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMap;          // 面点局部地图
+    pcl::PointCloud<PointType>::Ptr laserCloudCornerFromMapDS;      // 角点局部地图的下采样后的点云
+    pcl::PointCloud<PointType>::Ptr laserCloudSurfFromMapDS;        // 面点局部地图的下采样后的点云
 
-    pcl::KdTreeFLANN<PointType>::Ptr kdtreeCornerFromMap;   // 角点局部地图的kdtree
-    pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurfFromMap; // 面点局部地图的kdtree
+    pcl::KdTreeFLANN<PointType>::Ptr kdtreeCornerFromMap;           // 角点局部地图的kdtree
+    pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurfFromMap;             // 面点局部地图的kdtree
 
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeSurroundingKeyPoses;
     pcl::KdTreeFLANN<PointType>::Ptr kdtreeHistoryKeyPoses;
@@ -122,8 +122,8 @@ public:
     pcl::VoxelGrid<PointType> downSizeFilterICP;
     pcl::VoxelGrid<PointType> downSizeFilterSurroundingKeyPoses; // for surrounding key poses of scan-to-map optimization
     
-    ros::Time timeLaserInfoStamp;   // ros::time 类型的时间
-    double timeLaserInfoCur;    // double 类型的时间
+    ros::Time timeLaserInfoStamp;           // ros::time 类型的时间
+    double timeLaserInfoCur;                // double 类型的时间
 
     float transformTobeMapped[6];   
 
@@ -134,12 +134,12 @@ public:
     cv::Mat matP;
 
     int laserCloudCornerFromMapDSNum = 0;   // 当前局部地图下采样后的角点数目
-    int laserCloudSurfFromMapDSNum = 0; // 当前局部地图下采样后的面点数目
-    int laserCloudCornerLastDSNum = 0;  // 当前帧下采样后的角点的数目
-    int laserCloudSurfLastDSNum = 0;    // 当前帧下采样后的面点数目
+    int laserCloudSurfFromMapDSNum = 0;     // 当前局部地图下采样后的面点数目
+    int laserCloudCornerLastDSNum = 0;      // 当前帧下采样后的角点的数目
+    int laserCloudSurfLastDSNum = 0;        // 当前帧下采样后的面点数目
 
     bool aLoopIsClosed = false;
-    map<int, int> loopIndexContainer; // from new to old，保存已存在的约束对
+    map<int, int> loopIndexContainer;       // from new to old，保存已存在的约束对
     vector<pair<int, int>> loopIndexQueue;
     vector<gtsam::Pose3> loopPoseQueue;
     vector<gtsam::noiseModel::Diagonal::shared_ptr> loopNoiseQueue;
@@ -198,10 +198,10 @@ public:
         kdtreeSurroundingKeyPoses.reset(new pcl::KdTreeFLANN<PointType>());
         kdtreeHistoryKeyPoses.reset(new pcl::KdTreeFLANN<PointType>());
 
-        laserCloudCornerLast.reset(new pcl::PointCloud<PointType>()); // corner feature set from odoOptimization
-        laserCloudSurfLast.reset(new pcl::PointCloud<PointType>()); // surf feature set from odoOptimization
+        laserCloudCornerLast.reset(new pcl::PointCloud<PointType>());   // corner feature set from odoOptimization
+        laserCloudSurfLast.reset(new pcl::PointCloud<PointType>());     // surf feature set from odoOptimization
         laserCloudCornerLastDS.reset(new pcl::PointCloud<PointType>()); // downsampled corner featuer set from odoOptimization
-        laserCloudSurfLastDS.reset(new pcl::PointCloud<PointType>()); // downsampled surf featuer set from odoOptimization
+        laserCloudSurfLastDS.reset(new pcl::PointCloud<PointType>());   // downsampled surf featuer set from odoOptimization
 
         laserCloudOri.reset(new pcl::PointCloud<PointType>());
         coeffSel.reset(new pcl::PointCloud<PointType>());
@@ -1876,7 +1876,7 @@ public:
             else
                 laserOdomIncremental.pose.covariance[0] = 0;
         }
-        pubLaserOdometryIncremental.publish(laserOdomIncremental);
+        pubLaserOdometryIncremental.publish(laserOdomIncremental);  //发送给imu预积分节点
     }
 
     void publishFrames()

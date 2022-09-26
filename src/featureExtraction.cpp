@@ -23,19 +23,19 @@ public:
     ros::Publisher pubCornerPoints;
     ros::Publisher pubSurfacePoints;
 
-    pcl::PointCloud<PointType>::Ptr extractedCloud;
-    pcl::PointCloud<PointType>::Ptr cornerCloud;
-    pcl::PointCloud<PointType>::Ptr surfaceCloud;
+    pcl::PointCloud<PointType>::Ptr extractedCloud;     // 上一节点传来的去畸变的点云
+    pcl::PointCloud<PointType>::Ptr cornerCloud;        // 角点点云
+    pcl::PointCloud<PointType>::Ptr surfaceCloud;       // 面点点云
 
-    pcl::VoxelGrid<PointType> downSizeFilter;
+    pcl::VoxelGrid<PointType> downSizeFilter;           // 对面点进行下采样，因为面点很多
 
-    lio_sam::cloud_info cloudInfo;
-    std_msgs::Header cloudHeader;
+    lio_sam::cloud_info cloudInfo;                      // 点云信息
+    std_msgs::Header cloudHeader;                       // ROS消息头
 
-    std::vector<smoothness_t> cloudSmoothness;
-    float *cloudCurvature;
-    int *cloudNeighborPicked;
-    int *cloudLabel;
+    std::vector<smoothness_t> cloudSmoothness;          // 记录每一个点的曲率和原索引
+    float *cloudCurvature;                              // 记录每个点的曲率
+    int *cloudNeighborPicked;                           // 0为有效点，1为无效点
+    int *cloudLabel;                                    // 标签为1为角点，-1表示面点
 
     FeatureExtraction()
     {
@@ -65,8 +65,8 @@ public:
     // 订阅上一个结点的消息
     void laserCloudInfoHandler(const lio_sam::cloud_infoConstPtr& msgIn)
     {
-        cloudInfo = *msgIn; // new cloud info
-        cloudHeader = msgIn->header; // new cloud header
+        cloudInfo = *msgIn;             // new cloud info
+        cloudHeader = msgIn->header;    // new cloud header
         // 把提取出来的有效的点转成pcl的格式
         pcl::fromROSMsg(msgIn->cloud_deskewed, *extractedCloud); // new cloud for extraction
 
@@ -92,7 +92,7 @@ public:
                             + cloudInfo.pointRange[i+3] + cloudInfo.pointRange[i+4]
                             + cloudInfo.pointRange[i+5];            
 
-            cloudCurvature[i] = diffRange*diffRange;//diffX * diffX + diffY * diffY + diffZ * diffZ;
+            cloudCurvature[i] = diffRange * diffRange;    //diffX * diffX + diffY * diffY + diffZ * diffZ;
             // 下面两个值赋成初始值
             cloudNeighborPicked[i] = 0;
             cloudLabel[i] = 0;
@@ -167,6 +167,7 @@ public:
                 // 按照曲率排序
                 std::sort(cloudSmoothness.begin()+sp, cloudSmoothness.begin()+ep, by_value());
 
+                // 收集角点
                 int largestPickedNum = 0;
                 for (int k = ep; k >= sp; k--)
                 {

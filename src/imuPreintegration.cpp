@@ -176,8 +176,8 @@ public:
 
     std::mutex mtx;
 
-    ros::Subscriber subImu;     //订阅imu信息
-    ros::Subscriber subOdometry;    //订阅lidar odometry信息
+    ros::Subscriber subImu;             //订阅imu信息
+    ros::Subscriber subOdometry;        //订阅lidar odometry信息
     ros::Publisher pubImuOdometry;      //发布imu odometry信息
 
     bool systemInitialized = false;
@@ -201,8 +201,8 @@ public:
     gtsam::NavState prevState_;
     gtsam::imuBias::ConstantBias prevBias_;
 
-    gtsam::NavState prevStateOdom;
-    gtsam::imuBias::ConstantBias prevBiasOdom;
+    gtsam::NavState prevStateOdom;                  // 最新的经过优化的里程计状态
+    gtsam::imuBias::ConstantBias prevBiasOdom;      // 最新的经过优化的零偏
 
     bool doneFirstOpt = false;
     double lastImuT_imu = -1;
@@ -216,8 +216,8 @@ public:
 
     int key = 1;
 
-    gtsam::Pose3 imu2Lidar = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(-extTrans.x(), -extTrans.y(), -extTrans.z()));
-    gtsam::Pose3 lidar2Imu = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(extTrans.x(), extTrans.y(), extTrans.z()));
+    gtsam::Pose3 imu2Lidar = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(-extTrans.x(), -extTrans.y(), -extTrans.z()));     // 外参
+    gtsam::Pose3 lidar2Imu = gtsam::Pose3(gtsam::Rot3(1, 0, 0, 0), gtsam::Point3(extTrans.x(), extTrans.y(), extTrans.z()));        // 外参
 
     IMUPreintegration()
     {
@@ -229,7 +229,7 @@ public:
         boost::shared_ptr<gtsam::PreintegrationParams> p = gtsam::PreintegrationParams::MakeSharedU(imuGravity);
         p->accelerometerCovariance  = gtsam::Matrix33::Identity(3,3) * pow(imuAccNoise, 2); // acc white noise in continuous
         p->gyroscopeCovariance      = gtsam::Matrix33::Identity(3,3) * pow(imuGyrNoise, 2); // gyro white noise in continuous
-        p->integrationCovariance    = gtsam::Matrix33::Identity(3,3) * pow(1e-4, 2); // error committed in integrating position from velocities
+        p->integrationCovariance    = gtsam::Matrix33::Identity(3,3) * pow(1e-4, 2);        // error committed in integrating position from velocities
         gtsam::imuBias::ConstantBias prior_imu_bias((gtsam::Vector(6) << 0, 0, 0, 0, 0, 0).finished());; // assume zero initial bias
         // 初始位姿置信度设置比较高
         priorPoseNoise  = gtsam::noiseModel::Diagonal::Sigmas((gtsam::Vector(6) << 1e-2, 1e-2, 1e-2, 1e-2, 1e-2, 1e-2).finished()); // rad,rad,rad,m, m, m
@@ -267,7 +267,7 @@ public:
         systemInitialized = false;
     }
 
-    // 订阅地图优化节点的增量里程记消息
+    // 订阅地图优化节点的增量里程记消息，根据预积分约束，对其进行优化
     void odometryHandler(const nav_msgs::Odometry::ConstPtr& odomMsg)
     {
         std::lock_guard<std::mutex> lock(mtx);
@@ -529,6 +529,7 @@ public:
         imuQueOpt.push_back(thisImu);
         imuQueImu.push_back(thisImu);
         // 如果没有发生过优化就return
+        // 需要收到了mapOptimization的信息，进行过一次优化后，才能继续
         if (doneFirstOpt == false)
             return;
 

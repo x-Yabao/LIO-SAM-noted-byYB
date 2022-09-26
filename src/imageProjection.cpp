@@ -33,7 +33,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(OusterPointXYZIRT,
 // Use the Velodyne point format as a common representation
 using PointXYZIRT = VelodynePointXYZIRT;
 
-const int queueLength = 2000;
+const int queueLength = 2000;   // 存储一帧激光数据之间的IMU数据的队列长度
 
 class ImageProjection : public ParamServer
 {
@@ -49,39 +49,39 @@ private:
     ros::Publisher pubLaserCloudInfo;
 
     ros::Subscriber subImu;     
-    std::deque<sensor_msgs::Imu> imuQueue;  // imu消息队列
+    std::deque<sensor_msgs::Imu> imuQueue;              // imu消息队列
 
     ros::Subscriber subOdom;
-    std::deque<nav_msgs::Odometry> odomQueue;   // imu里程计消息队列
+    std::deque<nav_msgs::Odometry> odomQueue;           // imu里程计消息队列
 
     std::deque<sensor_msgs::PointCloud2> cloudQueue;    // 存储订阅的点云
-    sensor_msgs::PointCloud2 currentCloudMsg;   // 当前正在处理的点云
+    sensor_msgs::PointCloud2 currentCloudMsg;           // 当前正在处理的点云，ros格式
 
     double *imuTime = new double[queueLength];
     double *imuRotX = new double[queueLength];
     double *imuRotY = new double[queueLength];
     double *imuRotZ = new double[queueLength];
 
-    int imuPointerCur;
+    int imuPointerCur;                                  // 指向imu相关数据数组的最后一个数据
     bool firstPointFlag;
     Eigen::Affine3f transStartInverse;
 
-    pcl::PointCloud<PointXYZIRT>::Ptr laserCloudIn;     // 当前正在处理的点云，PCL格式
+    pcl::PointCloud<PointXYZIRT>::Ptr laserCloudIn;     // 当前正在处理的原始点云，PCL格式
     pcl::PointCloud<OusterPointXYZIRT>::Ptr tmpOusterCloudIn;
-    pcl::PointCloud<PointType>::Ptr   fullCloud;    // 去畸变后的点云（所有点）
-    pcl::PointCloud<PointType>::Ptr   extractedCloud;   // 待发布的有效激光点
+    pcl::PointCloud<PointType>::Ptr   fullCloud;        // 原始点云转换的完整点云，经过运动补偿
+    pcl::PointCloud<PointType>::Ptr   extractedCloud;   // 去掉了无效点的点云
 
-    int deskewFlag;     // 是否要去畸变
+    int deskewFlag;                                     // 是否要去畸变
     cv::Mat rangeMat;
 
-    bool odomDeskewFlag;    // 是否可以用odom来做运动补偿
-    float odomIncreX;
-    float odomIncreY;
-    float odomIncreZ;
+    bool odomDeskewFlag;                                // 是否可以用odom来做运动补偿
+    float odomIncreX;                                   // 通过imu里程计得到的帧起始和结束在x方向上的相对运动
+    float odomIncreY;                                   // 通过imu里程计得到的帧起始和结束在y方向上的相对运动
+    float odomIncreZ;                                   // 通过imu里程计得到的帧起始和结束在z方向上的相对运动
 
-    lio_sam::cloud_info cloudInfo;
-    double timeScanCur;     //当前帧的起始时间
-    double timeScanEnd;     //当前帧的结束时间
+    lio_sam::cloud_info cloudInfo;                      // 点云信息
+    double timeScanCur;                                 // 当前帧的起始时间
+    double timeScanEnd;                                 // 当前帧的结束时间
     std_msgs::Header cloudHeader;   
 
 
@@ -268,7 +268,7 @@ public:
         }
 
         // check point time
-        // 同样，检查是否有时间戳信息
+        // 同样，检查是否有时间戳信息，若没有时间戳信息，无法进行运动补偿
         if (deskewFlag == 0)
         {
             deskewFlag = -1;
@@ -354,7 +354,7 @@ public:
 
             // integrate rotation
             double timeDiff = currentImuTime - imuTime[imuPointerCur-1];
-            // 计算每一个时刻的姿态角，方便后续查找对应每个点云时间的值
+            // 计算每一个时刻的姿态角（相对于起始点），方便后续查找对应每个点云时间的值
             imuRotX[imuPointerCur] = imuRotX[imuPointerCur-1] + angular_x * timeDiff;
             imuRotY[imuPointerCur] = imuRotY[imuPointerCur-1] + angular_y * timeDiff;
             imuRotZ[imuPointerCur] = imuRotZ[imuPointerCur-1] + angular_z * timeDiff;
@@ -514,10 +514,10 @@ public:
         double pointTime = timeScanCur + relTime;
 
         float rotXCur, rotYCur, rotZCur;
-        // 计算当前点相对起始点的相对旋转
+        // 计算当前点相对起始点的相对旋转（使用的是imu的信息）
         findRotation(pointTime, &rotXCur, &rotYCur, &rotZCur);
-        // 这里没有计算平移补偿
         float posXCur, posYCur, posZCur;
+        // 这里没有计算平移补偿（会用的是imu里程计的信息）
         findPosition(relTime, &posXCur, &posYCur, &posZCur);
 
         if (firstPointFlag == true)
